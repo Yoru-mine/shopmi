@@ -1,21 +1,23 @@
-FROM php:8.2-apache
-RUN apt-get update && apt-get install -y libpng-dev libjpeg-dev libfreetype6-dev zip unzip git \
+FROM php:8.2-fpm
+
+# Установка системных зависимостей
+RUN apt-get update && apt-get install -y \
+    libpng-dev libjpeg-dev libfreetype6-dev zip unzip git \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_mysql gd \
-    && a2enmod rewrite
+    && docker-php-ext-install gd pdo pdo_mysql
 
-ENV APACHE_DOCUMENT_ROOT /var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
-
-WORKDIR /var/www/html
-COPY . .
+# Установка Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-RUN composer install --no-dev --optimize-autoloader \
-    && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+WORKDIR /var/www
+COPY . .
 
-EXPOSE 80
+# Установка зависимостей PHP
+RUN composer install --no-dev --optimize-autoloader
 
-# ВОТ ЭТО ЗАПУСКАЕТ APACHE В ФОНЕ, ЧТОБЫ КОНТЕЙНЕР НЕ УМИРАЛ
-CMD ["apache2-foreground"]
+# Настройка прав
+RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+
+# Запуск
+EXPOSE 8000
+CMD php artisan serve --host=0.0.0.0 --port=8000
