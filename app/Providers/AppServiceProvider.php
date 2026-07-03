@@ -19,5 +19,8 @@ class AppServiceProvider extends ServiceProvider
         if (app()->environment('production')) {
             Artisan::call('migrate --force');
         }
+        if (app()->environment('production')) {
+            \URL::forceScheme('https');
+        }
     }
 }
