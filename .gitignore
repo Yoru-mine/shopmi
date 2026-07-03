@@ -1,4 +1,5 @@
 ﻿/vendor
+/public/hot
 /node_modules
 .env
 .env.*
